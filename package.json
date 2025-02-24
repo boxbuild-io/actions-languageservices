@@ -7,7 +7,12 @@
     "./languageservice",
     "./languageserver"
   ],
+  "scripts": {
+    "increment-version": "lerna version --no-push",
+    "fix-esm-import-path": "fix-esm-import-path expressions languageserver languageservice workflow-parser"
+  },
   "devDependencies": {
+    "fix-esm-import-path": "^1.10.1",
     "lerna": "^6.0.3"
   }
 }

@@ -22,7 +22,7 @@ export async function getRunnerLabels(client: Octokit, cache: TTLCache, owner: s
 async function fetchRunnerLabels(client: Octokit, owner: string, name: string): Promise<Set<string>> {
   const labels = new Set<string>();
   try {
-    const itor = client.paginate.iterator(client.actions.listSelfHostedRunnersForRepo, {
+    const itor = client.paginate.iterator("GET /repos/{owner}/{repo}/actions/runners", {
       owner,
       repo: name,
       per_page: 100

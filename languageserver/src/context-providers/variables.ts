@@ -127,7 +127,7 @@ export async function getRemoteVariables(
 async function fetchVariables(octokit: Octokit, owner: string, name: string): Promise<Pair[]> {
   try {
     return await octokit.paginate(
-      octokit.actions.listRepoVariables,
+      "GET /repos/{owner}/{repo}/actions/variables",
       {
         owner: owner,
         repo: name,
@@ -151,7 +151,7 @@ async function fetchEnvironmentVariables(
 ): Promise<Pair[]> {
   try {
     return await octokit.paginate(
-      octokit.actions.listEnvironmentVariables,
+      "GET /repositories/{repository_id}/environments/{environment_name}/variables",
       {
         repository_id: repositoryId,
         environment_name: environmentName,

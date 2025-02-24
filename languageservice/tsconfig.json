@@ -7,7 +7,7 @@
     "forceConsistentCasingInFileNames": true,
     "sourceMap": true,
     "strict": true,
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "resolveJsonModule": true
   },
   "watchOptions": {

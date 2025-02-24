@@ -1,10 +1,10 @@
 import {data, DescriptionDictionary} from "@actions/expressions";
 
-import webhookObjects from "./objects.json";
-import webhooks from "./webhooks.json";
+import webhookObjects from "./objects.json" with {type: "json"};
+import webhooks from "./webhooks.json" with {type: "json"};
 
-import schedule from "./schedule.json" assert {type: "json"};
-import workflow_call from "./workflow_call.json" assert {type: "json"};
+import schedule from "./schedule.json" with {type: "json"};
+import workflow_call from "./workflow_call.json" with {type: "json"};
 
 const customEventPayloads: {[name: string]: unknown} = {
   schedule,

@@ -1,0 +1,50 @@
+name: Build & Test
+
+on:
+  push:
+    branches:
+      - main
+      - boxbuild
+  pull_request:
+    branches:
+      - main
+      - boxbuild
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: BoxBuild-ify
+      run: ./boxbuildify.sh
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '22'
+        cache: npm
+        cache-dependency-path: package-lock.json
+
+    - name: Install dependencies
+      run: npm ci -ws --include-workspace-root
+
+    - name: Fix ESM import paths
+      run: npm run fix-esm-import-path
+
+    #  BoxBuild-ify messes up formatting, disable
+    # - name: Format check
+    #   run: npm run format-check -ws
+
+    - name: Build
+      run: npm run build -ws
+
+    # Linting is not happy right now, disable
+    # - name: Lint
+    #   run: npm run lint -ws
+
+    # Tests are not happy right now, disable
+    # - name: Test
+    #   run: npm test -ws

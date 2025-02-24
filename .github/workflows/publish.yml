@@ -1,62 +1,75 @@
-name: Create release PR
-
-run-name: Create release PR for new ${{ github.event.inputs.version }} version
+name: Publish to GitHub Packages
 
 on:
-  workflow_dispatch:
-    inputs:
-      version:
-        required: true
-        type: choice
-        description: "What type of release is this"
-        options:
-          - "major"
-          - "minor"
-          - "patch"
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  packages: write
+  contents: read
 
 jobs:
-  create-release-pr:
-    name: Create release PR
-
+  publish:
     runs-on: ubuntu-latest
 
-    permissions:
-      contents: write
-      pull-requests: write
-
     steps:
-      - uses: actions/checkout@v3
+    - name: Checkout
+      uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v3
-        with:
-          node-version: "16"
+    - name: BoxBuild-ify
+      run: ./boxbuildify.sh
 
-      - name: Bump version and push
-        run: |
-          git config --global user.email "github-actions@github.com"
-          git config --global user.name "GitHub Actions"
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '22'
+        cache: npm
+        cache-dependency-path: package-lock.json
 
-          NEW_VERSION=$(./script/workflows/increment-version.sh ${{ inputs.version }})
+    - name: Install dependencies
+      run: npm ci -ws --include-workspace-root
 
-          git checkout -b release/$NEW_VERSION
+    - name: Fix ESM import paths
+      run: npm run fix-esm-import-path
 
-          npx lerna version $NEW_VERSION --yes --no-push --no-git-tag-version --force-publish
+    - name: Build
+      run: npm run build -ws
 
-          git add **/package.json package-lock.json lerna.json
-          git commit -m "Release extension version $NEW_VERSION"
+    - name: Set version
+      id: set-version
+      run: |
+        VERSION=${GITHUB_REF_NAME#v}
+        echo "VERSION=$VERSION" >> $GITHUB_ENV
 
-          git push --set-upstream origin release/$NEW_VERSION
+    - name: Configure packages
+      run: |
+        # Ensure packages are linked to this repository
+        for pkg in expressions languageserver languageservice workflow-parser; do
+          pushd $pkg
+          contents=$(jq --arg v "$VERSION" --arg repo "$GITHUB_REPOSITORY" \
+            '.version = $v | 
+            .repository = {
+              "type": "git",
+              "url": "git+https://github.com/$repo.git"
+            } |
+            .publishConfig = {
+              "registry": "https://npm.pkg.github.com"
+            }' package.json)
+          echo "$contents" > package.json
+          popd
+        done
 
-          echo "new_version=$NEW_VERSION" >> $GITHUB_ENV
-
-      - name: Create PR
-        run: |
-          LAST_PR=$(gh pr list --repo ${{ github.repository }} --limit 1 --state merged --search "Release version" --json number | jq -r '.[0].number')
-          ./script/workflows/generate-release-notes.sh $LAST_PR ${{ env.new_version }}
-          gh pr create \
-            --title "Release version ${{ env.new_version }}" \
-            --body-file releasenotes.md \
-            --base main \
-            --head release/${{ env.new_version }}
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - name: Publish packages
+      run: |
+        # Setup auth for npm publish
+        echo "//npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}" > .npmrc
+        echo "@boxbuild-io:registry=https://npm.pkg.github.com" >> .npmrc
+        
+        for pkg in expressions languageserver languageservice workflow-parser; do
+          pushd $pkg
+          npm publish
+          popd
+        done
+      env:
+        NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

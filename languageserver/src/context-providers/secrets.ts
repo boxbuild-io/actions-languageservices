@@ -135,7 +135,7 @@ async function getRemoteSecrets(
 async function fetchSecrets(octokit: Octokit, owner: string, name: string): Promise<StringData[]> {
   try {
     return await octokit.paginate(
-      octokit.actions.listRepoSecrets,
+      "GET /repos/{owner}/{repo}/actions/secrets",
       {
         owner,
         repo: name,
@@ -156,7 +156,7 @@ async function fetchEnvironmentSecrets(
 ): Promise<StringData[]> {
   try {
     return await octokit.paginate(
-      octokit.actions.listEnvironmentSecrets,
+      "GET /repositories/{repository_id}/environments/{environment_name}/secrets",
       {
         repository_id: repositoryId,
         environment_name: environmentName,

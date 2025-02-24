@@ -1,6 +1,5 @@
 import {isCollection, isDocument, isMap, isPair, isScalar, isSeq, LineCounter, parseDocument, Scalar} from "yaml";
-import type {LinePos} from "yaml/dist/errors";
-import type {NodeBase} from "yaml/dist/nodes/Node";
+import type {Node as NodeBase} from "yaml";
 import {ObjectReader} from "../templates/object-reader";
 import {EventType, ParseEvent} from "../templates/parse-event";
 import {
@@ -216,6 +215,9 @@ export class YamlObjectReader implements ObjectReader {
     throw new Error("Expected start of reader");
   }
 }
+
+// https://github.com/eemeli/yaml/blob/v2.7.0/src/errors.ts#L27
+type LinePos = {line: number; col: number};
 
 function rangeFromLinePos(linePos: [LinePos] | [LinePos, LinePos] | undefined): TokenRange | undefined {
   if (linePos === undefined) {
